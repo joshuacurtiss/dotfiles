@@ -4,20 +4,30 @@ This repo will hold all of my scripts and tooling for setting up my environment.
 
 ## Setup
 
-Check out this repo somewhere. I usually check it out at `~/proj/joshuacurtiss/dotfiles`,
-but you can change that path accordingly.
+Run the installer directly from GitHub:
 
-```bash
-mkdir -p ~/proj/joshuacurtiss && cd ~/proj/joshuacurtiss && \
-git clone git@github.com:joshuacurtiss/dotfiles.git
+```sh
+/bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/joshuacurtiss/dotfiles/HEAD/install.sh)" </dev/tty >/dev/tty 2>&1
 ```
 
-Then add this to the top of `~/.zprofile`:
+The installer clones this repo to your user directory at `~/.dotfiles` by default. You can
+override that with `DOTFILES_DIR=/some/path` and optionally set `DOTFILES_REPO_URL` or
+`DOTFILES_BRANCH` if you need a different source or branch.
 
-```bash
-# Configs
-# ... set any configurations you need to customize...
+It will add the shell source line to the end of the first existing zsh profile file it
+finds, preferring `~/.zprofile` and falling back to `~/.zshrc` or `~/.zlogin` if needed.
 
-# Josh's Dotfiles
-source ~/proj/joshuacurtiss/dotfiles/zsh/index.zsh
+If you prefer to set things up manually, add this to the top of your profile file:
+
+```sh
+source ~/your/path/to/dotfiles/zsh/index.zsh
+```
+
+## Local Development
+
+If you want to try rerunning the installer from your local checkout instead of downloading
+from GitHub again, you can go to your local checkout and running it like this:
+
+```sh
+DOTFILES_DIR="$PWD" DOTFILES_BRANCH="$(git rev-parse --abbrev-ref HEAD)" ./install.sh
 ```
