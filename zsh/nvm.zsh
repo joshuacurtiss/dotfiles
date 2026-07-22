@@ -18,7 +18,15 @@ fi
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-# If a .nvmrc file exists in the current directory, use the specified Node.js version.
-if [ -f ".nvmrc" ]; then
-   nvm use || nvm install
-fi
+nvm_hook() {
+   # If a .nvmrc file exists in the current directory, use the specified Node.js version.
+   if [ -f ".nvmrc" ]; then
+      nvm use || nvm install
+   fi
+}
+
+# Execute nvm anytime we change directories
+command -v add-zsh-hook &>/dev/null && add-zsh-hook chpwd nvm_hook
+
+# Run nvm on initial shell load
+nvm_hook
