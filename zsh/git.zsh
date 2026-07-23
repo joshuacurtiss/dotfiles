@@ -105,3 +105,56 @@ autosquash() {
       git rebase "${params[@]}" "$hash"
    fi
 }
+
+# TODO: Do more testing and vetting of this vibe-coded function.
+# Syncs the current branch with its upstream branch
+syncupstream() {
+   inside_git_repo || { echo "Error: Not a git repository." >&2; return 1; }
+
+   local branch upstream counts ahead behind force
+   branch=$(current_git_branch)
+   [[ -n $branch ]] || { echo "Error: Detached HEAD; checkout a branch first." >&2; return 1; }
+
+   upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null) || {
+      echo "Error: No upstream set for $branch." >&2
+      echo "Tip: git branch --set-upstream-to origin/$branch" >&2
+      return 1
+   }
+
+   force=false
+   [[ $1 == "--force" || $1 == "-f" ]] && force=true
+
+   # Refresh remote tracking refs first.
+   git fetch -p || return 1
+
+   counts=$(git rev-list --left-right --count HEAD...@{u}) || return 1
+   ahead=${counts%% *}
+   behind=${counts##* }
+
+   echo "$branch vs $upstream: ahead=$ahead behind=$behind"
+
+   # Already in sync.
+   if [[ $ahead -eq 0 && $behind -eq 0 ]]; then
+      echo "Already up to date."
+      return 0
+   fi
+
+   # Clean fast-forward case.
+   if [[ $ahead -eq 0 && $behind -gt 0 ]]; then
+      echo "Fast-forwarding..."
+      git pull --ff-only
+      return $?
+   fi
+
+   # Local-only commits: do not destroy work unless explicitly forced.
+   if [[ $ahead -gt 0 && $behind -eq 0 ]]; then
+      echo "Local branch is ahead by $ahead commit(s). Refusing to reset."
+      echo "Push your commits, or rerun with --force to discard local commits."
+      $force || return 1
+   fi
+
+   # Diverged (common after force push) OR forced discard of local-only commits.
+   echo "Resetting hard to upstream ($upstream) and syncing..."
+   git reset --hard '@{u}' || return 1
+   git pull --ff-only
+}
